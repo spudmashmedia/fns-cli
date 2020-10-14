@@ -1,0 +1,11 @@
+[package]
+name = "fns"
+version = "1.0.0"
+authors = ["Spudmash Media"]
+edition = "2018"
+
+[dependencies]
+indicatif = "0.15.0"
+# clap = {version="*", features=["debug"]}
+clap = {version="*", features=[]}
+num_cpus = "1.0"
