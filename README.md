@@ -1,4 +1,4 @@
-# fns(1) - fns - Find NordVPN Server
+# fns(1) - Find NordVPN Server
 
 # SYNOPSIS
 
