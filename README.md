@@ -1,3 +1,5 @@
+![demo](/docs/img/fns-demo.gif)
+
 # fns(1) - fns - Find NordVPN Server
 
 # SYNOPSIS
@@ -33,6 +35,10 @@ OPTIONS:
 ## Simple
 ```
 fns-cli> ./fns -c au -i 100.0.0.1
+
+Where
+c = country code
+i = ip address to search
 ```
 
 ## Full
@@ -40,7 +46,7 @@ fns-cli> ./fns -c au -i 100.0.0.1
 fns-cli> ./fns -c au -i 100.0.0.1 -s 1 -e 1000 -v -t 32
 
 Where
-c = country
+c = country code
 i = ip address to search
 s = start index
 e = end index
