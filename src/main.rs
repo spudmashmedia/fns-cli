@@ -14,22 +14,21 @@ fn main() {
     let p_start_num = "Start Number";
     let p_end_num = "End Number";
     let p_ip_address = "Ip4 Address";
-    let p_output_file_path = "Output File Path";
     let p_country_code = "Country Code";
     let p_thread_count = "Thread Count";
     let p_verbose = "Verbose";
 
     let matches = App::new("fns")
         .version("1.0")
-        .author("Spudmash Media")
-        .about("Reverse Lookup of NordVPN Server hostname by Ipv4 address")
+        .author("Spudmash Media [ - ]")
+        .about("Reverse Lookup of NordVPN Server hostname by Ipv4 address\nBuilt with Rust 🦀")
         .arg(
             Arg::with_name(&p_country_code)
                 .takes_value(true)
                 .short("c")
                 .long("country")
-                .default_value("")
-                .help("Options: [au, us, none]")
+                .default_value("Au")
+                .help("Options: [Al, Ar, Au, At, Be, Ba, Br, Bg, Ca, Cl, Cr, Hr, Cy, Cz, Dk, Ee, Fi, Fr, Ge, De, Gr, Hk, Hu, Is, In, Id, Ie, Il, It, Jp, Lv, Lu, My, Mx, Md, Nl, Nz, Mk, No, Pl, Pt, Ro, Rs, Sg, Sk, Si, Za, Kr, Es, Se, Ch, Tw, Th, Tr, Ua, Uk, Us, Vn]")
                 .required(true),
         )
         .arg(
@@ -57,14 +56,6 @@ fn main() {
                 .long("ip")
                 .help("Search for VPN Hostname by IP address. E.g. 127.0.0.1")
                 .required(true),
-        )
-        .arg(
-            Arg::with_name(&p_output_file_path)
-                .takes_value(true)
-                .short("o")
-                .long("outfile")
-                .help("Local file path. E.g. /folder/name/file_name.ext")
-                .required(false),
         )
         .arg(
             Arg::with_name(&p_thread_count)
