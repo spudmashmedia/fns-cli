@@ -1,5 +1,3 @@
-![demo](/docs/img/fns-demo.gif)
-
 # fns(1) - fns - Find NordVPN Server
 
 # SYNOPSIS
@@ -31,6 +29,8 @@ OPTIONS:
 ```
 
 # USAGE
+
+![demo](/docs/img/fns-demo.gif)
 
 ## Simple
 ```
