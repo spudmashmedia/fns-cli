@@ -43,6 +43,24 @@ pub fn verbose_info(requested_thread_count: usize) {
     );
 }
 
+// use by main in clap validator
+pub fn is_valid_ip(source_ip: String) -> Result<(), String> {
+    println!("got this: {:?}", &source_ip);
+    let test_ip = source_ip.parse::<Ipv4Addr>();
+
+    let mut excluded_ip_addresses: Vec<Ipv4Addr> = Vec::new();
+    excluded_ip_addresses.push("0.0.0.0".parse::<Ipv4Addr>().unwrap());
+    excluded_ip_addresses.push("127.0.0.1".parse::<Ipv4Addr>().unwrap());
+
+    if test_ip.is_err() {
+        Err(String::from("Invalid IP Address"))
+    } else if excluded_ip_addresses.contains(&test_ip.unwrap()) {
+        Err(String::from("IP Address is blacklisted"))
+    } else {
+        Ok(())
+    }
+}
+
 // Util: build dataframe from start value to end value
 fn build_data(start: u32, end: u32) -> Vec<u32> {
     let mut vec = Vec::new();
@@ -85,6 +103,26 @@ fn ping_by_hostname(hostname: &String) -> Ipv4Addr {
     parse_ping_result(ping_response)
 }
 
+// Check if both ip's in same subnet,  i.e. 1.2.3.100 == 1.2.3.200
+pub fn is_in_same_subnet(source: &Ipv4Addr, target: &Ipv4Addr) -> bool {
+    let source_oct = source.octets();
+    let target_oct = target.octets();
+
+    source_oct[0] == target_oct[0]
+        && source_oct[1] == target_oct[1]
+        && source_oct[2] == target_oct[2]
+}
+
+// check if same ip and not 0.0.0.0
+pub fn is_same_ip(source: &Ipv4Addr, target: &Ipv4Addr) -> bool {
+    let source_oct = source.octets();
+    let target_oct = target.octets();
+
+    let test_empty_ip_address = Ipv4Addr::new(0, 0, 0, 0);
+
+    source.ne(&test_empty_ip_address) && source_oct == target_oct
+}
+
 // worker task:
 // - iterate through dataframe and ping each hostname to find a match
 // - transmit match back to main thread
@@ -94,8 +132,6 @@ fn worker_task(
     filter: SearchFilter,
     payload: WorkerRequest,
 ) {
-    let test_empty_ip_address = Ipv4Addr::new(0, 0, 0, 0);
-
     // scan dataframe sequentially
     for item in payload.data.into_iter() {
         let hostname = get_vpn_string(&payload.country_code, &item);
@@ -103,21 +139,15 @@ fn worker_task(
         pb.set_message(&format!("🔎 [scanning: {}]", &hostname));
         let response = ping_by_hostname(&hostname);
 
-        let response_oct = response.octets();
-        let filter_oct = filter.ip.octets();
-
         // exact match
-        if response != test_empty_ip_address && response == filter.ip {
+        if is_same_ip(&response, &filter.ip) {
             let result = WorkerResponse {
                 match_type: MatchType::Exact,
                 host: hostname,
                 ip: response,
             };
             tx.send(result).unwrap(); // notify main thread
-        } else if response_oct[0] == filter_oct[0]
-            && response_oct[1] == filter_oct[1]
-            && response_oct[2] == filter_oct[2]
-        {
+        } else if is_in_same_subnet(&response, &filter.ip) {
             //partial match
             let result = WorkerResponse {
                 match_type: MatchType::Partial,
@@ -126,7 +156,6 @@ fn worker_task(
             };
             tx.send(result).unwrap(); // notify main thread
         }
-
         pb.inc(1);
     }
 
@@ -239,7 +268,7 @@ mod build_data_tests {
     use super::*;
 
     #[test]
-    fn build_data_test() {
+    fn when_s_1_and_e_10_should_return_len_10() {
         let test_start = 1;
         let test_end = 10;
         let expected_result = 10;
@@ -255,7 +284,7 @@ mod parse_ping_result_tests {
     use std::net::Ipv4Addr;
 
     #[test]
-    fn parse_ping_result_when_valid_hostname_should_return_ip() {
+    fn when_valid_hostname_should_return_ip() {
         let test_ping_result = "PING au548.nordvpn.com (41.42.43.44): 56 data bytes".to_string();
 
         let expect_ip_string = "41.42.43.44".to_string().parse::<Ipv4Addr>().unwrap();
@@ -266,7 +295,7 @@ mod parse_ping_result_tests {
     }
 
     #[test]
-    fn parse_ping_when_invalid_hostname_empty_should_return_zero_oct() {
+    fn when_invalid_hostname_empty_should_return_zero_oct() {
         let test_ping_result = "".to_string();
 
         let expect_ip_string = "0.0.0.0".to_string().parse::<Ipv4Addr>().unwrap();
@@ -274,5 +303,106 @@ mod parse_ping_result_tests {
         let actual_result = parse_ping_result(test_ping_result);
 
         assert_eq!(expect_ip_string, actual_result);
+    }
+}
+
+#[cfg(test)]
+mod is_in_same_subnet_tests {
+    use super::*;
+    use std::net::Ipv4Addr;
+
+    #[test]
+    fn when_source_target_subnet_same_should_return_true() {
+        let test_a: u8 = 10;
+        let test_b: u8 = 20;
+        let test_c: u8 = 30;
+
+        let test_source = Ipv4Addr::new(test_a.clone(), test_b.clone(), test_c.clone(), 1);
+        let test_target = Ipv4Addr::new(test_a.clone(), test_b.clone(), test_c.clone(), 42);
+
+        let actual_result = is_in_same_subnet(&test_source, &test_target);
+        assert_eq!(actual_result, true);
+    }
+
+    #[test]
+    fn when_source_target_subnet_different_should_return_false() {
+        let test_a: u8 = 10;
+        let test_b: u8 = 20;
+
+        let test_source = Ipv4Addr::new(test_a.clone(), test_b.clone(), 0, 1);
+        let test_target = Ipv4Addr::new(test_a.clone(), test_b.clone(), 1, 42);
+
+        let actual_result = is_in_same_subnet(&test_source, &test_target);
+        assert_eq!(actual_result, false);
+    }
+
+    #[test]
+    fn when_source_target_exactly_same_should_return_true() {
+        let test_a: u8 = 10;
+        let test_b: u8 = 20;
+        let test_c: u8 = 30;
+        let test_source = Ipv4Addr::new(test_a.clone(), test_b.clone(), test_c.clone(), 200);
+        let test_target = Ipv4Addr::new(test_a.clone(), test_b.clone(), test_c.clone(), 200);
+
+        let actual_result = is_in_same_subnet(&test_source, &test_target);
+        assert_eq!(actual_result, true);
+    }
+}
+
+#[cfg(test)]
+mod is_same_ip_tests {
+    use super::*;
+    use std::net::Ipv4Addr;
+
+    #[test]
+    fn when_same_ip_should_return_true() {
+        let test_source = "1.2.3.4".parse::<Ipv4Addr>().unwrap();
+        let test_target = "1.2.3.4".parse::<Ipv4Addr>().unwrap();
+
+        assert_eq!(is_same_ip(&test_source, &test_target), true);
+    }
+
+    #[test]
+    fn when_different_ip_should_return_true() {
+        let test_source = "4.3.2.1".parse::<Ipv4Addr>().unwrap();
+        let test_target = "1.2.3.4".parse::<Ipv4Addr>().unwrap();
+
+        assert_eq!(is_same_ip(&test_source, &test_target), false);
+    }
+}
+
+#[cfg(test)]
+mod is_valid_ip_tests {
+    use super::*;
+    #[test]
+    fn when_empty_should_throw_error() {
+        let actual_error_message =
+            is_valid_ip("".to_string()).expect_err("expecting an error to occur");
+        assert_eq!(actual_error_message, "Invalid IP Address");
+    }
+
+    #[test]
+    fn when_zero_ip_should_throw_error() {
+        let actual_error_message = is_valid_ip("0.0.0.0".to_string()).expect_err("blah");
+        assert_eq!(actual_error_message, "IP Address is blacklisted");
+    }
+
+    #[test]
+    fn when_loopback_ip_should_throw_error() {
+        let actual_error_message = is_valid_ip("127.0.0.1".to_string()).expect_err("blah");
+        assert_eq!(actual_error_message, "IP Address is blacklisted");
+    }
+
+    #[test]
+    fn when_bad_ip_should_throw_errorxxx() {
+        let actual_error_message = is_valid_ip("#.#.#.#".to_string()).expect_err("blah");
+        assert_eq!(actual_error_message, "Invalid IP Address");
+    }
+
+    #[test]
+    fn when_valid_ip_should_return_brackets() {
+        let actual_result =
+            is_valid_ip("1.2.3.4".to_string()).expect("should of gotten a string back");
+        assert_eq!(actual_result, ());
     }
 }
