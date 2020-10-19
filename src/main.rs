@@ -75,8 +75,6 @@ fn main() {
         )
         .get_matches();
 
-    let mut vec = Vec::new();
-
     let start_num = matches
         .value_of(&p_start_num)
         .unwrap_or("1")
@@ -88,10 +86,6 @@ fn main() {
         .unwrap_or("1000")
         .parse::<u32>()
         .unwrap();
-
-    for n in start_num..=end_num {
-        vec.push(n)
-    }
 
     let match_ip = matches
         .value_of(&p_ip_address)
