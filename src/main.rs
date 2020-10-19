@@ -55,7 +55,8 @@ fn main() {
                 .short("i")
                 .long("ip")
                 .help("Search for VPN Hostname by IP address. E.g. 127.0.0.1")
-                .required(true),
+                .required(true)
+                .validator(core::is_valid_ip),
         )
         .arg(
             Arg::with_name(&p_thread_count)
@@ -94,7 +95,7 @@ fn main() {
 
     let match_ip = matches
         .value_of(&p_ip_address)
-        .unwrap_or("0.0.0.0")
+        .unwrap_or("127.0.0.1")
         .parse::<Ipv4Addr>()
         .unwrap();
 
