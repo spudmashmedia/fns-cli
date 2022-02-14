@@ -19,56 +19,55 @@ fn main() {
     let p_verbose = "Verbose";
 
     let matches = App::new("fns")
-        .version("1.0")
+        .version("1.1")
         .author("Spudmash Media [ - ]")
         .about("Reverse Lookup of NordVPN Server hostname by Ipv4 address\nBuilt with Rust 🦀")
         .arg(
-            Arg::with_name(&p_country_code)
+            Arg::new(p_country_code)
                 .takes_value(true)
-                .short("c")
+                .short('c')
                 .long("country")
-                .default_value("Au")
                 .help("Options: [Al, Ar, Au, At, Be, Ba, Br, Bg, Ca, Cl, Cr, Hr, Cy, Cz, Dk, Ee, Fi, Fr, Ge, De, Gr, Hk, Hu, Is, In, Id, Ie, Il, It, Jp, Lv, Lu, My, Mx, Md, Nl, Nz, Mk, No, Pl, Pt, Ro, Rs, Sg, Sk, Si, Za, Kr, Es, Se, Ch, Tw, Th, Tr, Ua, Uk, Us, Vn]")
                 .required(true),
         )
         .arg(
-            Arg::with_name(&p_start_num)
+            Arg::new(p_start_num)
                 .takes_value(true)
-                .short("s")
+                .short('s')
                 .long("start")
                 .min_values(1)
                 .max_values(999)
                 .help("Default: 1"),
         )
         .arg(
-            Arg::with_name(&p_end_num)
+            Arg::new(p_end_num)
                 .takes_value(true)
-                .short("e")
+                .short('e')
                 .long("end")
                 .max_values(1000)
                 .help("Default: 1000")
                 .required(false),
         )
         .arg(
-            Arg::with_name(&p_ip_address)
+            Arg::new(p_ip_address)
                 .takes_value(true)
-                .short("i")
+                .short('i')
                 .long("ip")
                 .help("Search for VPN Hostname by IP address. E.g. 127.0.0.1")
                 .required(true)
                 .validator(core::is_valid_ip),
         )
         .arg(
-            Arg::with_name(&p_thread_count)
+            Arg::new(p_thread_count)
                 .takes_value(true)
-                .short("t")
+                .short('t')
                 .long("threadcount")
                 .help("Thread Count [Default to number of physical CPU cores]")
                 .required(false),
         )
         .arg(
-            Arg::with_name(&p_verbose)
-                .short("v")
+            Arg::new(p_verbose)
+                .short('v')
                 .long("verbose")
                 .help("Verbose mode will print out CPU information & suggestions")
                 .required(false),

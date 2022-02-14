@@ -44,7 +44,7 @@ pub fn verbose_info(requested_thread_count: usize) {
 }
 
 // use by main in clap validator
-pub fn is_valid_ip(source_ip: String) -> Result<(), String> {
+pub fn is_valid_ip(source_ip: &str) -> Result<(), String> {
     println!("got this: {:?}", &source_ip);
     let test_ip = source_ip.parse::<Ipv4Addr>();
 
